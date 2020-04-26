@@ -313,6 +313,7 @@ public Action Timer_CheckPlayerAfkManagerCsgo(Handle timer, any data) {
                         Format(clientName,sizeof(clientName),"%N",client);
                         CPrintToChatAll("%t", "Kick_Announce", clientName);
                         KickClient(client, "%t", "Kick_Message");
+                        CreateTimer(2.0, Timer_CheckAlivePlayers);
                     }
                 }
             }
@@ -332,6 +333,7 @@ public Action Timer_CheckPlayerAfkManagerCsgo(Handle timer, any data) {
                         ChangeClientTeam(client, 1);
                         SetEntProp(client, Prop_Data, "m_iFrags", frags);
                         SetEntProp(client, Prop_Data, "m_iDeaths", death);
+                        CreateTimer(2.0, Timer_CheckAlivePlayers);
                     }
                 }
             }
@@ -359,6 +361,7 @@ public Action Timer_KeyCheck(Handle Timer) {
                     if(countdown_buttons[i] == iKickTime) {
                         CPrintToChatAll("%t", "Kick_Announce", clientName);
                         KickClient(i, "%t", "Kick_Message");
+                        CreateTimer(2.0, Timer_CheckAlivePlayers);
                     }
                     else if(countdown_buttons[i] < iKickTime) {
                         if(countdown_buttons[i] % 5 == 0) {
@@ -378,6 +381,7 @@ public Action Timer_KeyCheck(Handle Timer) {
                         ChangeClientTeam(i, 1);
                         SetEntProp(i, Prop_Data, "m_iFrags", frags);
                         SetEntProp(i, Prop_Data, "m_iDeaths", death);
+                        CreateTimer(2.0, Timer_CheckAlivePlayers);
                     }
                     else if(countdown_buttons[i] < iMoveTime) { 
                         if(countdown_buttons[i]%5 == 0) {
@@ -394,12 +398,7 @@ public Action Timer_KeyCheck(Handle Timer) {
 }
 
 public Action Timer_CheckAlivePlayers(Handle timer) {
-    int CT = GetPlayersAlive(CS_TEAM_CT, "both");
-    int T = GetPlayersAlive(CS_TEAM_T, "both");
-    int players = CT + T;
-    
-    if(players <= 0 && !bHasRoundJustEnded)
-        CS_TerminateRound(1.0, CSRoundEnd_Draw);
+    CheckAlivePlayers();
 }
 
 void ResetClientVariables(int client) {
@@ -427,7 +426,7 @@ public bool IsValidClient(int client) {
     return false;
 }
 
-stock int GetPlayersAlive(int team, char[] bot) {
+int GetPlayersAlive(int team, char[] bot) {
     int iCount = 0;
     for(int i = 1; i <= MaxClients; i++)  {
         if(StrEqual(bot, "player", false)) {
@@ -447,4 +446,18 @@ stock int GetPlayersAlive(int team, char[] bot) {
         }
     }
     return iCount; 
+}
+
+void CheckAlivePlayers() {
+    int CT_Players = GetPlayersAlive(CS_TEAM_CT, "both");
+    int T_Players = GetPlayersAlive(CS_TEAM_T, "both");
+    int players = CT_Players + T_Players;
+    if(!bHasRoundJustEnded) {
+        if(players <= 0)
+            CS_TerminateRound(1.0, CSRoundEnd_Draw);
+        else if(CT_Players == 0)
+            CS_TerminateRound(1.0, CSRoundEnd_TerroristWin);
+        else if(T_Players == 0)
+            CS_TerminateRound(1.0, CSRoundEnd_CTWin);
+    }
 }
