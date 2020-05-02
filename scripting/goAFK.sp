@@ -27,6 +27,7 @@ bool bIsCheckTimerEnabled;
 bool bHasRoundJustEnded;
 bool bAreStrafesDisabled;
 bool bExcludeBotsFromChecking;
+bool bIsBombPlanted;
 
 float moveTime, kickTime, warnTime;
 float afkTime[MAXPLAYERS+1] = {0.0, ...};
@@ -51,7 +52,7 @@ public Plugin myinfo = {
     name = "goAFK Manager",
     author = "SUPER TIMOR/ credits: Dr.Api",
     description = "AFK Manager z dedykacją dla korzystających z goboosting.pl",
-    version = "1.0.0",
+    version = "1.3",
     url = "https://goboosting.pl"
 }
 
@@ -76,6 +77,7 @@ public void OnPluginStart() {
     HookEvent("player_death", Event_PlayerDeath);
     HookEvent("round_start", Event_RoundStart);
     HookEvent("round_end", Event_RoundEnd);
+    HookEvent("bomb_planted", Event_BombPlanted);
     
     HookConVarChange(goAFK_enable, Event_CvarChange);
     HookConVarChange(goAFK_mode, Event_CvarChange);
@@ -208,10 +210,15 @@ public void Event_PlayerDeath(Handle event, const char[] name, bool dontBroadcas
 
 public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast) {
     bHasRoundJustEnded = false;
+    bIsBombPlanted = false;
 }
 
 public void Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast) {
     bHasRoundJustEnded = true;
+}
+
+public Action Event_BombPlanted(Event event, char[] name, bool dontBroadcast) {
+    bIsBombPlanted = true;
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2]) {
@@ -457,7 +464,7 @@ void CheckAlivePlayers() {
             CS_TerminateRound(1.0, CSRoundEnd_Draw);
         else if(CT_Players == 0)
             CS_TerminateRound(1.0, CSRoundEnd_TerroristWin);
-        else if(T_Players == 0)
+        else if(T_Players == 0 && !bIsBombPlanted)
             CS_TerminateRound(1.0, CSRoundEnd_CTWin);
     }
 }
